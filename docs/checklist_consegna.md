@@ -11,6 +11,7 @@
 - [x] dataset di almeno 10 documenti
 - [x] traccia professionale per la demo finale
 - [x] piano di test
+- [x] guida su dove inserire le immagini
 
 ## Prima della demo
 
@@ -20,3 +21,4 @@
 - [ ] aprire Swagger su `/docs`
 - [ ] tenere pronta la cartella `dataset/`
 - [ ] aprire il documento Word per il deliverable finale
+- [ ] inserire le immagini seguendo `docs/guida_immagini.md`

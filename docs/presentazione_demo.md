@@ -9,6 +9,10 @@ Messaggio da dire:
 
 "Abbiamo realizzato un backend documentale per una media impresa, con upload controllato, ricerca full-text, gestione metadati, autenticazione e una funzionalita' AI di classificazione."
 
+Immagine da inserire:
+
+- logo del progetto oppure sfondo sobrio con icone documento, database e ricerca
+
 ## Slide 2 - Problema aziendale
 
 - documenti distribuiti tra cartelle e mail
@@ -20,6 +24,10 @@ Messaggio da dire:
 
 "Il problema di partenza era la dispersione documentale. L'obiettivo era costruire un sistema semplice ma credibile, adatto a un contesto aziendale reale."
 
+Immagine da inserire:
+
+- schema con file dispersi tra cartelle di rete, email e desktop
+
 ## Slide 3 - Obiettivi del progetto
 
 - upload di PDF, DOCX, TXT
@@ -28,6 +36,10 @@ Messaggio da dire:
 - indicizzazione su Solr
 - ricerca con filtri
 - AI su almeno un caso concreto
+
+Immagine da inserire:
+
+- elenco visuale con icone per upload, database, ricerca e AI
 
 ## Slide 4 - Architettura
 
@@ -39,6 +51,10 @@ Messaggio da dire:
 Messaggio da dire:
 
 "Abbiamo separato la persistenza dalla ricerca: MongoDB conserva il dato, Solr ottimizza la consultazione."
+
+Immagine da inserire:
+
+- diagramma architetturale semplificato del sistema
 
 ## Slide 5 - Modello dati
 
@@ -55,6 +71,10 @@ Campi rilevanti:
 - utente di caricamento
 - categoria e sintesi AI
 
+Immagine da inserire:
+
+- tabella sintetica delle collection MongoDB e dei campi Solr
+
 ## Slide 6 - Funzionalita' AI scelta
 
 Classificazione automatica del documento.
@@ -67,6 +87,10 @@ Messaggio da dire:
 
 "Abbiamo scelto la proposta AI piu' utile e implementabile nel tempo a disposizione: migliora i metadati e non blocca il flusso in caso di errore."
 
+Immagine da inserire:
+
+- flowchart della classificazione AI oppure screenshot JSON con `category` e `summary`
+
 ## Slide 7 - Demo operativa
 
 Sequenza da mostrare:
@@ -77,12 +101,23 @@ Sequenza da mostrare:
 4. ricerca full-text
 5. apertura del dettaglio documento
 
+Immagini da inserire:
+
+- screenshot login Swagger
+- screenshot upload riuscito
+- screenshot ricerca con snippet
+- screenshot dettaglio documento
+
 ## Slide 8 - Qualita' e test
 
 - validazione input lato API
 - gestione errori MongoDB e Solr
 - rollback se indicizzazione fallisce
 - suite di test unitaria e smoke test configurabile
+
+Immagine da inserire:
+
+- screenshot output `py -m pytest`
 
 ## Slide 9 - Stato del collaudo
 
@@ -95,6 +130,10 @@ Messaggio da dire:
 
 "Il codice e' pronto anche per il cluster remoto, ma l'ultimo vincolo emerso e' infrastrutturale, non applicativo."
 
+Immagine da inserire:
+
+- screenshot `/health` con `mongo:error` e `solr:ok`
+
 ## Slide 10 - Conclusioni e sviluppi futuri
 
 - OCR per scansioni
@@ -102,6 +141,10 @@ Messaggio da dire:
 - UI frontend
 - espansione AI sulla ricerca
 - riassunto contestuale in consultazione
+
+Immagine da inserire:
+
+- roadmap semplice in tre colonne: attuale, prossimo passo, sviluppi futuri
 
 ## Chiusura consigliata
 

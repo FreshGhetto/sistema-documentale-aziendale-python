@@ -98,6 +98,27 @@ Per la funzionalita' AI e' previsto l'uso di un modello GPT via API. In ambiente
 - Solr: motore solido per ricerca testuale e filtri.
 - LLM esterno: consente di aggiungere un supporto intelligente concreto senza sviluppare modelli custom.
 
+### 4.6 Immagine da inserire nel documento
+
+Inserire subito dopo questa sezione un diagramma architetturale semplice, con quattro blocchi:
+
+- client / Swagger UI
+- backend FastAPI
+- MongoDB
+- Apache Solr
+- servizio LLM esterno
+
+Collegamenti da mostrare:
+
+- il client invia richieste HTTP al backend;
+- il backend salva metadati e testo su MongoDB;
+- il backend indicizza e cerca in Solr;
+- il backend invia il testo al modello LLM per la classificazione AI.
+
+Didascalia consigliata:
+
+`Figura 1 - Architettura logica del sistema documentale`
+
 ## 5. Modello dati
 
 ### 5.1 Collection MongoDB `documents`
@@ -151,6 +172,19 @@ Campi principali:
 - `ai_summary_txt_it`
 
 I campi testuali principali usano un analyzer per la lingua italiana, con lowercase, stopwords italiane e stemming leggero.
+
+### 5.5 Immagine da inserire nel documento
+
+Inserire dopo questa sezione una tabella o screenshot dello schema dati con:
+
+- collection MongoDB `documents`
+- collection `users`
+- collection `audit_log`
+- campi del core Solr `documents`
+
+Didascalia consigliata:
+
+`Figura 2 - Modello dati MongoDB e campi indicizzati su Solr`
 
 ## 6. Tre proposte di utilizzo dell'AI
 
@@ -229,6 +263,20 @@ In caso di errore si mostra il testo estratto senza riassunto. Il flusso di cons
 
 La proposta selezionata per l'implementazione e' la classificazione automatica del documento. E' la piu' semplice da realizzare nel tempo disponibile, produce un beneficio immediato sui metadati ed e' coerente con un flusso di caricamento gia' previsto dai requisiti.
 
+### 6.5 Immagine da inserire nel documento
+
+Inserire qui uno schema del flusso AI implementato:
+
+1. upload file
+2. estrazione testo
+3. invio del testo all'LLM oppure fallback locale
+4. ritorno di `categoria` e `sintesi`
+5. salvataggio in MongoDB e indicizzazione in Solr
+
+Didascalia consigliata:
+
+`Figura 3 - Flusso della classificazione AI del documento`
+
 ## 7. Requisiti funzionali e copertura
 
 Il sistema progettato copre tutti i 10 requisiti indicati dall'esercitazione:
@@ -255,6 +303,14 @@ La robustezza e' parte della valutazione, quindi il sistema prevede:
 - fallback AI locale in caso di problema con il modello esterno.
 
 Queste scelte evitano il blocco totale del flusso e rendono la demo piu' affidabile.
+
+### 8.1 Immagine da inserire nel documento
+
+Inserire uno screenshot della risposta JSON di `/health` oppure di un errore `503` gestito dal backend, per dimostrare la robustezza applicativa.
+
+Didascalia consigliata:
+
+`Figura 4 - Esempio di gestione controllata degli errori`
 
 ## 9. Limiti noti
 
