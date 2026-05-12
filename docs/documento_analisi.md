@@ -1,119 +1,141 @@
 # Documento di analisi - Sistema Documentale Aziendale in Python
 
-## 1. Scenario e contesto
+## 1. Introduzione, scenario e contesto applicativo
 
-L'azienda cliente e' una media impresa italiana con circa 150 dipendenti. La documentazione aziendale e' cresciuta nel tempo in modo non governato: contratti, ordini, fatture, curriculum, comunicazioni interne e altri file sono distribuiti tra cartelle condivise, allegati e-mail e postazioni locali. Questo genera tempi di ricerca elevati, duplicazioni, rischio di perdita di informazioni e scarsa visibilita' sugli accessi ai documenti.
+Il presente documento descrive l'analisi e le scelte progettuali relative allo sviluppo di un sistema documentale aziendale realizzato in Python, conforme alla traccia laboratoriale proposta. Il contesto di riferimento e' quello di una media impresa italiana caratterizzata da una gestione eterogenea e distribuita dei documenti interni, con conseguenti difficolta' nella reperibilita' delle informazioni, duplicazione dei contenuti, assenza di tracciabilita' delle operazioni e limitato controllo sugli accessi.
 
-L'obiettivo del progetto e' realizzare un sistema documentale interno sviluppato in Python che permetta di:
+L'obiettivo del progetto e' la definizione di un backend applicativo in grado di:
 
-- caricare documenti in modo controllato;
-- estrarre automaticamente il testo dai file supportati;
-- salvare metadati e contenuto su MongoDB;
-- indicizzare i contenuti in Apache Solr per la ricerca full-text;
-- applicare almeno una funzionalita' AI utile e realistica;
-- tracciare le principali operazioni utente.
+- acquisire documenti nei formati `PDF`, `DOCX` e `TXT`;
+- estrarre automaticamente il contenuto testuale dai file caricati;
+- memorizzare metadati e testo estratto in MongoDB;
+- indicizzare i contenuti in Apache Solr per supportare la ricerca full-text;
+- esporre API HTTP per autenticazione, upload, ricerca, consultazione e download;
+- integrare almeno una funzionalita' basata su intelligenza artificiale;
+- registrare le principali operazioni utente a fini di audit.
 
-La soluzione scelta e' un backend REST realizzato con FastAPI. Il backend dialoga con MongoDB per la persistenza, con Solr per la ricerca e con un modello LLM esterno per la funzionalita' AI selezionata.
+La soluzione implementata adotta FastAPI come framework per il backend REST, MongoDB come database documentale, Apache Solr come motore di ricerca e un servizio LLM esterno, opzionale, per la classificazione automatica dei documenti.
 
 ## 2. Attori del sistema
 
-### 2.1 Admin
+### 2.1 Amministratore
 
-L'amministratore gestisce il sistema in fase iniziale e durante l'esercizio di laboratorio. I suoi permessi sono:
+L'amministratore rappresenta il soggetto incaricato della configurazione iniziale del sistema e del supporto operativo durante le fasi di collaudo e dimostrazione. Nell'implementazione corrente, tale ruolo coincide con l'utente predefinito creato in fase di startup, qualora MongoDB sia raggiungibile. Le sue responsabilita' sono:
 
-- accesso completo agli endpoint;
-- caricamento e consultazione di tutti i documenti;
-- esecuzione della classificazione AI;
-- verifica dei log e supporto alla demo finale.
+- autenticarsi al sistema tramite username e password;
+- caricare e consultare documenti;
+- avviare la classificazione AI durante l'upload o su documenti gia' presenti;
+- verificare il comportamento generale del sistema;
+- disporre di un accesso completo agli endpoint disponibili.
 
-### 2.2 Utente aziendale
+### 2.2 Utente aziendale autenticato
 
-L'utente aziendale rappresenta un dipendente autorizzato a usare il sistema documentale per esigenze operative. I suoi permessi sono:
+L'utente aziendale autenticato utilizza il sistema per finalita' operative ordinarie. In particolare, puo':
 
-- login con username e password;
-- caricamento di nuovi documenti;
-- ricerca full-text con filtri;
-- visualizzazione dei documenti e download del file originale.
+- effettuare il login;
+- caricare uno o piu' documenti;
+- associare metadati descrittivi ai file;
+- eseguire ricerche full-text e filtri;
+- visualizzare il dettaglio di un documento;
+- scaricare il file originale.
 
-Per questa esercitazione non sono stati introdotti ruoli avanzati o ACL granulari per singolo documento, per mantenere il sistema entro il perimetro realizzabile nelle 8 ore.
+Per ragioni di perimetro progettuale e di tempo, non sono stati implementati profili autorizzativi granulari per reparto, documento o singolo insieme di permessi. L'autenticazione e' quindi di base, ma sufficiente a soddisfare la richiesta dell'esercitazione.
 
 ## 3. Casi d'uso principali
 
-### UC-01 - Login al sistema
+### UC-01 - Autenticazione dell'utente
 
-L'utente apre l'applicazione, inserisce username e password e richiede l'accesso. Il sistema verifica le credenziali su MongoDB, genera un token Bearer e lo restituisce al client. Se le credenziali sono errate, l'accesso viene negato.
+L'utente invia le proprie credenziali all'endpoint `POST /auth/login`. Il sistema verifica la corrispondenza tra username e password hashata memorizzata nella collection `users`. In caso di esito positivo, viene generato e restituito un token Bearer JWT da utilizzare nelle successive richieste protette. In caso contrario, viene restituito un errore di autenticazione.
 
-### UC-02 - Caricamento di un documento
+### UC-02 - Caricamento e acquisizione del documento
 
-L'utente autenticato invia uno o piu' file nei formati PDF, DOCX o TXT insieme ai metadati richiesti: titolo, tipologia, autore e tag. Il sistema salva il file su filesystem, estrae il testo, memorizza i dati in MongoDB e indicizza il documento in Solr. Se richiesto, avvia anche la classificazione AI.
+L'utente autenticato invoca l'endpoint `POST /documents/upload`, allegando uno o piu' file e i metadati associati. Il backend valida il formato, salva il file su filesystem, estrae il testo e costruisce il record documentale. Se richiesto, viene eseguita anche la classificazione AI. Il documento viene quindi salvato in MongoDB e indicizzato in Solr.
 
 ### UC-03 - Ricerca full-text con filtri
 
-L'utente inserisce una query testuale e puo' restringere i risultati per tipologia, autore e intervallo di date. Il sistema interroga Solr, restituisce i risultati ordinati per rilevanza e mostra eventuali snippet evidenziati. L'operazione viene registrata nell'audit log.
+Attraverso l'endpoint `GET /search`, l'utente inserisce una query testuale e puo' opzionalmente restringere i risultati per tipologia documentale, autore e intervallo temporale. Solr elabora la richiesta, ordina i risultati per rilevanza, restituisce eventuali snippet evidenziati e consente la paginazione.
 
-### UC-04 - Consultazione e download del documento
+### UC-04 - Consultazione del dettaglio documento
 
-Partendo dall'ID di un documento o da un risultato di ricerca, l'utente richiede il dettaglio completo. Il sistema recupera metadati e testo estratto da MongoDB e genera il link di download del file originale salvato su filesystem.
+L'utente richiede il contenuto di un documento specifico tramite `GET /documents/{document_id}`. Il sistema recupera da MongoDB i metadati e il testo estratto e restituisce anche l'URL logico per il download del file originale.
 
-### UC-05 - Classificazione AI del documento
+### UC-05 - Download del file originale
 
-L'utente puo' attivare la classificazione AI durante l'upload oppure richiederla su un documento gia' caricato. Il sistema invia all'LLM il testo estratto, riceve categoria e sintesi breve, salva i risultati nei metadati e li rende disponibili anche in ricerca.
+L'utente puo' scaricare il file sorgente associato al documento tramite `GET /documents/{document_id}/download`. Il backend verifica l'identita' dell'utente, recupera il percorso del file dal record salvato e restituisce il contenuto come `FileResponse`.
 
-## 4. Architettura della soluzione
+### UC-06 - Classificazione AI di un documento esistente
 
-L'architettura e' composta da quattro elementi principali:
+L'utente puo' richiamare `POST /documents/{document_id}/classify` per ottenere una categorizzazione automatica e una breve sintesi del contenuto. L'operazione viene registrata nell'audit log e puo' essere eseguita anche successivamente all'upload.
 
-1. Backend Python FastAPI
-2. MongoDB
-3. Apache Solr
-4. Servizio LLM esterno via API
+## 4. Architettura del sistema
+
+L'architettura proposta si basa su una separazione funzionale tra livello applicativo, persistenza documentale, indicizzazione semantica e servizio AI.
+
+I componenti principali sono:
+
+1. client HTTP / Swagger UI;
+2. backend REST FastAPI;
+3. MongoDB;
+4. Apache Solr;
+5. servizio LLM esterno.
 
 ### 4.1 Backend FastAPI
 
-FastAPI e' stato scelto perche' permette di costruire rapidamente API tipizzate, con validazione automatica dei dati e documentazione Swagger integrata. Per una demo di laboratorio e' un vantaggio concreto: gli endpoint sono testabili immediatamente dal browser senza dover costruire una UI dedicata.
+Il backend costituisce il nucleo applicativo del sistema. Esso espone gli endpoint necessari al soddisfacimento dei requisiti funzionali e organizza la logica in moduli distinti:
+
+- `app/routers/` per gli endpoint HTTP;
+- `app/services/` per la logica applicativa;
+- `app/database.py` per l'accesso a MongoDB;
+- `app/security.py` per hashing password e token JWT;
+- `app/config.py` per la configurazione tramite variabili d'ambiente.
+
+FastAPI e' stato selezionato per la sua capacita' di fornire validazione automatica dei payload, tipizzazione nativa, documentazione Swagger integrata e un modello di sviluppo adatto a un backend di laboratorio ma strutturato.
 
 ### 4.2 MongoDB
 
-MongoDB memorizza i documenti in tre collection principali:
+MongoDB e' impiegato come database documentale per la memorizzazione di:
 
-- `documents`
-- `users`
-- `audit_log`
+- documenti e relativi metadati;
+- utenti autenticabili;
+- log di audit.
 
-La scelta e' coerente con un dominio documentale in cui i metadati possono evolvere nel tempo e alcuni campi opzionali, come quelli AI, possono essere aggiunti senza migrazioni rigide.
+La scelta e' coerente con la natura semi-strutturata del dominio, che prevede campi obbligatori, facoltativi e arricchimenti successivi, come quelli generati dall'AI.
 
 ### 4.3 Apache Solr
 
-Solr viene usato esclusivamente come motore di ricerca. Ogni documento caricato viene indicizzato in un core dedicato chiamato `documents`. La ricerca viene eseguita tramite query full-text, ranking per rilevanza, paginazione e filtri strutturati.
+Solr e' utilizzato come motore dedicato alla ricerca. Il sistema non delega a MongoDB la full-text search principale, ma adotta un indice separato e ottimizzato. Ogni documento, una volta acquisito, viene trasformato in un record indicizzabile contenente campi descrittivi, contenuto testuale e arricchimenti AI. La ricerca impiega query `edismax`, filtri strutturati, paginazione e highlighting.
 
 ### 4.4 Servizio LLM esterno
 
-Per la funzionalita' AI e' previsto l'uso di un modello GPT via API. In ambiente reale la chiamata avviene con SDK ufficiale. Nel progetto e' presente anche un fallback locale per evitare che il flusso si blocchi in caso di assenza della chiave API, timeout o risposta non parsabile.
+La funzionalita' AI implementata si basa su un modello GPT accessibile via API. Il backend invia al modello un estratto del contenuto del documento e riceve in risposta una categoria documentale e una sintesi breve. In assenza di API key o in caso di risposta non parsabile, il sistema adotta un fallback locale basato su regole e parole chiave.
 
-### 4.5 Motivazione delle scelte
+### 4.5 Considerazioni architetturali
 
-- Python: linguaggio rapido da sviluppare e adatto all'integrazione di librerie backend e AI.
-- FastAPI: riduce il tempo di sviluppo, semplifica la validazione e offre una demo immediata.
-- MongoDB: adatto a documenti con struttura flessibile.
-- Solr: motore solido per ricerca testuale e filtri.
-- LLM esterno: consente di aggiungere un supporto intelligente concreto senza sviluppare modelli custom.
+Dal punto di vista progettuale, l'architettura realizza una chiara separazione dei ruoli:
+
+- FastAPI governa il flusso applicativo;
+- MongoDB garantisce persistenza e auditabilita';
+- Solr ottimizza la fase di reperimento delle informazioni;
+- il servizio LLM aggiunge una componente di supporto semantico.
+
+Tale separazione migliora la manutenibilita' del progetto e consente di isolare le responsabilita' tecniche.
 
 ### 4.6 Immagine da inserire nel documento
 
-Inserire subito dopo questa sezione un diagramma architetturale semplice, con quattro blocchi:
+Inserire subito dopo questa sezione un diagramma architetturale semplice, con i seguenti blocchi:
 
-- client / Swagger UI
-- backend FastAPI
-- MongoDB
-- Apache Solr
-- servizio LLM esterno
+- client / Swagger UI;
+- backend FastAPI;
+- MongoDB;
+- Apache Solr;
+- servizio LLM esterno.
 
-Collegamenti da mostrare:
+Collegamenti da rappresentare:
 
 - il client invia richieste HTTP al backend;
-- il backend salva metadati e testo su MongoDB;
-- il backend indicizza e cerca in Solr;
-- il backend invia il testo al modello LLM per la classificazione AI.
+- il backend salva metadati e testo in MongoDB;
+- il backend indicizza e interroga Solr;
+- il backend invia il testo al modello LLM per la classificazione.
 
 Didascalia consigliata:
 
@@ -123,215 +145,232 @@ Didascalia consigliata:
 
 ### 5.1 Collection MongoDB `documents`
 
-Campi principali:
+La collection `documents` rappresenta il fulcro informativo del sistema. I campi principali sono:
 
-- `_id`: identificativo univoco del documento
-- `filename`: nome file originale
-- `stored_filename`: nome file sul filesystem
-- `title`: titolo del documento
-- `document_type`: tipologia del documento
-- `author`: autore o ufficio di riferimento
-- `tags`: lista di tag liberi
-- `uploaded_at`: data e ora di caricamento
-- `uploaded_by`: utente che ha effettuato l'upload
-- `extracted_text`: testo estratto dal contenuto
-- `ai_category`: categoria suggerita dall'AI
-- `ai_summary`: sintesi breve del documento
+- `_id`: identificativo univoco del documento;
+- `filename`: nome originale del file caricato;
+- `stored_filename`: nome del file memorizzato su filesystem;
+- `title`: titolo del documento;
+- `document_type`: tipologia documentale;
+- `author`: autore o ufficio di riferimento;
+- `tags`: lista di tag liberi;
+- `uploaded_at`: timestamp del caricamento;
+- `uploaded_by`: username dell'utente che ha eseguito l'upload;
+- `extracted_text`: testo estratto dal file;
+- `ai_category`: categoria suggerita dalla classificazione AI;
+- `ai_summary`: sintesi breve del documento.
 
 ### 5.2 Collection MongoDB `users`
 
-Campi principali:
+La collection `users` contiene i dati necessari all'autenticazione:
 
-- `_id`
-- `username`
-- `password_hash`
-- `role`
+- `_id`;
+- `username`;
+- `password_hash`;
+- `role`.
 
 ### 5.3 Collection MongoDB `audit_log`
 
-Campi principali:
+La collection `audit_log` memorizza la tracciatura delle operazioni rilevanti:
 
-- `_id`
-- `username`
-- `action`
-- `payload`
-- `created_at`
+- `_id`;
+- `username`;
+- `action`;
+- `payload`;
+- `created_at`.
+
+Le azioni registrate includono, ad esempio, upload, consultazione, download, classificazione e ricerca.
 
 ### 5.4 Core Solr `documents`
 
-Campi principali:
+Il core Solr `documents` contiene i campi necessari alla ricerca full-text e al filtering:
 
-- `id`
-- `title_txt_it`
-- `document_type_s`
-- `author_s`
-- `tags_ss`
-- `uploaded_at_dt`
-- `content_txt_it`
-- `ai_category_s`
-- `ai_summary_txt_it`
+- `id`;
+- `title_txt_it`;
+- `document_type_s`;
+- `author_s`;
+- `tags_ss`;
+- `uploaded_at_dt`;
+- `content_txt_it`;
+- `ai_category_s`;
+- `ai_summary_txt_it`.
 
-I campi testuali principali usano un analyzer per la lingua italiana, con lowercase, stopwords italiane e stemming leggero.
+I campi testuali principali fanno riferimento a un field type dedicato alla lingua italiana, con tokenizzazione standard, normalizzazione in lowercase, stopwords italiane e stemming leggero.
 
 ### 5.5 Immagine da inserire nel documento
 
-Inserire dopo questa sezione una tabella o screenshot dello schema dati con:
+Inserire dopo questa sezione una tabella o uno schema sintetico che rappresenti:
 
-- collection MongoDB `documents`
-- collection `users`
-- collection `audit_log`
-- campi del core Solr `documents`
+- le tre collection MongoDB (`documents`, `users`, `audit_log`);
+- i campi principali del core Solr `documents`.
 
 Didascalia consigliata:
 
-`Figura 2 - Modello dati MongoDB e campi indicizzati su Solr`
+`Figura 2 - Modello dati MongoDB e campi indicizzati in Solr`
 
-## 6. Tre proposte di utilizzo dell'AI
+## 6. Proposte di utilizzo dell'intelligenza artificiale
 
-Questa e' la parte centrale del documento. Sono state definite tre proposte diverse. Una sola viene implementata nel software, mentre le altre due restano progettuali ma realistiche.
+La traccia richiede l'individuazione di tre possibili modalita' di impiego dell'AI all'interno del sistema documentale. Nel presente progetto sono state elaborate tre proposte, di cui una effettivamente implementata e due mantenute a livello progettuale.
 
-### Proposta AI 1 - Classificazione automatica del documento (implementata)
+### 6.1 Proposta 1 - Classificazione automatica del documento (implementata)
 
-#### Punto del flusso
+#### Punto del flusso operativo
 
-Durante il caricamento del documento oppure su richiesta successiva dell'utente.
+La classificazione puo' essere attivata durante l'upload oppure successivamente su un documento gia' memorizzato.
 
-#### Problema risolto
+#### Problema affrontato
 
-Gli utenti possono sbagliare la tipologia del documento o non valorizzarla in modo uniforme. La classificazione AI propone una categoria coerente, riducendo errori e migliorando la qualita' della ricerca filtrata.
-
-#### Input e output
-
-- input: testo estratto dal documento
-- output: categoria tra `contratto`, `ordine`, `fattura`, `cv`, `comunicazione`, `altro` e breve sintesi
-
-#### Salvataggio o visualizzazione
-
-L'output viene salvato nei campi `ai_category` e `ai_summary` del documento in MongoDB e viene indicizzato in Solr, cosi' da essere disponibile nelle ricerche successive.
-
-#### Gestione errori e fallback
-
-Se l'API LLM non e' configurata, va in timeout o restituisce JSON non valido, il sistema non blocca l'upload. Applica invece un fallback locale basato su parole chiave e assegna una categoria minima. In questo modo la robustezza del sistema resta accettabile anche in demo.
-
-### Proposta AI 2 - Riscrittura della query utente in linguaggio documentale
-
-#### Punto del flusso
-
-Fase di ricerca.
-
-#### Problema risolto
-
-Spesso gli utenti formulano query troppo generiche o colloquiali. Un LLM potrebbe trasformare la domanda dell'utente in una query piu' adatta a Solr, arricchita con sinonimi, varianti lessicali e termini tipici del dominio aziendale.
+La categorizzazione manuale dei documenti e' soggetta a errori, inconsistenze terminologiche e omissioni. Un supporto automatico consente di ridurre l'eterogeneita' dei metadati e di migliorare la qualita' delle ricerche filtrate.
 
 #### Input e output
 
-- input: query originale dell'utente e set minimo di metadati disponibili
-- output: query espansa per Solr e spiegazione sintetica della trasformazione
+- input: testo estratto dal documento;
+- output: categoria tra `contratto`, `ordine`, `fattura`, `cv`, `comunicazione`, `altro`, accompagnata da una sintesi breve.
 
 #### Salvataggio o visualizzazione
 
-La query riformulata puo' essere mostrata nel client come suggerimento e loggata nell'audit per fini diagnostici.
+L'output viene restituito all'utente e puo' essere memorizzato nei campi `ai_category` e `ai_summary`. Questi valori sono inoltre indicizzati in Solr.
 
-#### Gestione errori e fallback
+#### Gestione degli errori e fallback
 
-Se l'AI non risponde, il sistema esegue la query originale senza bloccare la ricerca. Questa caratteristica la rende adatta a un secondo step evolutivo, ma non prioritaria nella prima versione.
+In assenza della chiave API, in caso di timeout o in presenza di una risposta non conforme al formato previsto, il sistema utilizza un fallback locale basato su parole chiave. In tal modo, la procedura resta deterministica e il flusso applicativo non si interrompe.
 
-### Proposta AI 3 - Riassunto contestuale del documento in consultazione
+### 6.2 Proposta 2 - Espansione semantica della query di ricerca
 
-#### Punto del flusso
+#### Punto del flusso operativo
 
-Durante la visualizzazione del documento.
+La funzionalita' si collocherebbe nella fase di ricerca full-text.
 
-#### Problema risolto
+#### Problema affrontato
 
-Documenti lunghi come contratti o comunicazioni estese richiedono tempo per essere compresi. Un riassunto contestuale permette all'utente di capire in pochi secondi se il documento e' quello giusto.
+Le query formulate dagli utenti possono risultare vaghe, incomplete o lessicalmente distanti dai termini effettivamente presenti nei documenti. Un modello linguistico potrebbe generare una query piu' ricca e coerente con il dominio documentale aziendale.
 
 #### Input e output
 
-- input: testo completo del documento o estratti significativi
-- output: riassunto di 5-6 righe con punti chiave
+- input: query originale dell'utente;
+- output: query espansa, elenco di sinonimi o riformulazione adatta a Solr.
 
 #### Salvataggio o visualizzazione
 
-Il riassunto puo' essere generato on demand e mostrato nella scheda documento. Eventualmente si puo' cacheare nel campo `ai_summary`.
+La query riformulata potrebbe essere mostrata nel client oppure tracciata nell'audit log per finalita' di analisi.
 
-#### Gestione errori e fallback
+#### Gestione degli errori e fallback
 
-In caso di errore si mostra il testo estratto senza riassunto. Il flusso di consultazione resta operativo.
+Se l'AI non restituisce una risposta valida, il sistema eseguirebbe la query originale senza alterare il comportamento di base.
 
-### 6.4 Scelta della funzionalita' da implementare
+### 6.3 Proposta 3 - Riassunto contestuale del documento
 
-La proposta selezionata per l'implementazione e' la classificazione automatica del documento. E' la piu' semplice da realizzare nel tempo disponibile, produce un beneficio immediato sui metadati ed e' coerente con un flusso di caricamento gia' previsto dai requisiti.
+#### Punto del flusso operativo
+
+La funzionalita' si applicherebbe durante la consultazione del dettaglio documento.
+
+#### Problema affrontato
+
+Documenti estesi, quali contratti o comunicazioni articolate, richiedono una lettura completa per comprenderne il contenuto essenziale. Un riassunto contestuale permetterebbe all'utente di valutare piu' rapidamente la rilevanza del documento.
+
+#### Input e output
+
+- input: testo completo o parzialmente selezionato del documento;
+- output: sintesi testuale breve, orientata ai punti principali.
+
+#### Salvataggio o visualizzazione
+
+Il risultato potrebbe essere mostrato on demand nella vista di dettaglio e, in una successiva evoluzione, memorizzato in cache.
+
+#### Gestione degli errori e fallback
+
+In caso di fallimento del servizio AI, il sistema continuerebbe a mostrare il testo estratto originale.
+
+### 6.4 Motivazione della scelta implementativa
+
+Tra le tre proposte, la classificazione automatica e' stata selezionata perche' rappresenta il miglior compromesso tra utilita' pratica, coerenza con il processo di caricamento e fattibilita' nel tempo disponibile. Essa produce infatti un arricchimento immediato dei metadati e si integra naturalmente con le funzioni di ricerca e consultazione.
 
 ### 6.5 Immagine da inserire nel documento
 
-Inserire qui uno schema del flusso AI implementato:
+Inserire in questa posizione un flowchart del processo AI:
 
-1. upload file
-2. estrazione testo
-3. invio del testo all'LLM oppure fallback locale
-4. ritorno di `categoria` e `sintesi`
-5. salvataggio in MongoDB e indicizzazione in Solr
+1. upload del file;
+2. estrazione del testo;
+3. chiamata al modello LLM oppure attivazione del fallback locale;
+4. produzione di categoria e sintesi;
+5. salvataggio in MongoDB e indicizzazione in Solr.
 
 Didascalia consigliata:
 
-`Figura 3 - Flusso della classificazione AI del documento`
+`Figura 3 - Flusso della classificazione automatica del documento`
 
-## 7. Requisiti funzionali e copertura
+## 7. Corrispondenza con i requisiti funzionali
 
-Il sistema progettato copre tutti i 10 requisiti indicati dall'esercitazione:
+L'implementazione attuale copre i requisiti funzionali richiesti dalla traccia:
 
-- upload multiplo di PDF, DOCX, TXT;
-- estrazione del testo;
-- metadati base;
-- salvataggio su MongoDB;
-- indicizzazione in Solr;
-- ricerca full-text;
-- filtri di ricerca;
-- visualizzazione e download;
-- AI opzionale ma implementata;
-- autenticazione base e log.
+- `RF-01`: upload di documenti `PDF`, `DOCX`, `TXT`, anche multipli;
+- `RF-02`: estrazione automatica del testo dai file supportati;
+- `RF-03`: gestione di titolo, tipologia, autore, data di caricamento e tag;
+- `RF-04`: memorizzazione dei metadati e del testo estratto in MongoDB, con file binario su filesystem;
+- `RF-05`: indicizzazione dei documenti in un core Solr dedicato;
+- `RF-06`: ricerca full-text con paginazione;
+- `RF-07`: filtri per tipologia, autore e intervallo di date;
+- `RF-08`: visualizzazione del dettaglio documento e download del file originale;
+- `RF-09`: funzionalita' AI effettivamente implementata;
+- `RF-10`: autenticazione di base e log delle operazioni.
 
-## 8. Gestione errori
+Dal punto di vista del codice, tali requisiti sono distribuiti principalmente tra gli endpoint `auth`, `documents` e `search`, con il supporto dei servizi applicativi dedicati.
 
-La robustezza e' parte della valutazione, quindi il sistema prevede:
+## 8. Gestione degli errori, robustezza e risultati del collaudo
 
-- errore 400 per formati non supportati o metadati mancanti;
-- errore 401 per autenticazione non valida;
-- errore 404 per documento inesistente;
-- errore 503 per Solr non raggiungibile;
-- fallback AI locale in caso di problema con il modello esterno.
+La robustezza operativa costituisce una componente rilevante del progetto. L'implementazione prevede:
 
-Queste scelte evitano il blocco totale del flusso e rendono la demo piu' affidabile.
+- errori `400` per formati non supportati o metadati non validi;
+- errori `401` per credenziali non valide o token assente/non corretto;
+- errori `404` per documento inesistente;
+- errori `503` per indisponibilita' di MongoDB o Solr;
+- fallback AI locale in caso di indisponibilita' del modello esterno;
+- rollback della persistenza del documento se l'indicizzazione Solr fallisce successivamente al salvataggio.
+
+In sede di collaudo, il sistema ha mostrato i seguenti comportamenti:
+
+- compilazione Python corretta;
+- test unitari superati;
+- indicizzazione e ricerca Solr correttamente funzionanti;
+- classificazione AI con fallback funzionante;
+- impossibilita' di completare il flusso di login/upload contro il cluster MongoDB remoto, a causa di un problema di raggiungibilita' infrastrutturale sulla porta `27017`.
+
+Tale ultimo elemento non evidenzia una contraddizione del codice applicativo, ma una dipendenza dall'ambiente di rete e dalla configurazione del provider del database gestito.
 
 ### 8.1 Immagine da inserire nel documento
 
-Inserire uno screenshot della risposta JSON di `/health` oppure di un errore `503` gestito dal backend, per dimostrare la robustezza applicativa.
+Inserire in questa sezione uno screenshot della risposta di `/health` oppure di una risposta `503` gestita dal backend, per documentare il comportamento controllato in condizioni di errore.
 
 Didascalia consigliata:
 
-`Figura 4 - Esempio di gestione controllata degli errori`
+`Figura 4 - Esempio di gestione controllata degli errori applicativi`
 
-## 9. Limiti noti
+## 9. Limiti della soluzione
 
-- assenza di OCR: i PDF scansionati senza testo non sono gestiti;
-- controllo accessi semplificato, senza permessi per reparto o documento;
-- assenza di interfaccia frontend dedicata;
-- dataset di prova limitato e fittizio;
-- classificazione AI basata su poche categorie definite a priori.
+Pur soddisfacendo il perimetro dell'esercitazione, il progetto presenta alcuni limiti noti:
 
-## 10. Sviluppi futuri
+- assenza di OCR per documenti scansionati privi di testo nativo;
+- autenticazione semplificata, priva di ruoli gerarchici articolati;
+- assenza di una interfaccia frontend dedicata;
+- dipendenza da un'infrastruttura MongoDB esterna per i test completi end-to-end;
+- classificazione AI limitata a un insieme chiuso di categorie documentali.
 
-Gli sviluppi successivi piu' utili sarebbero:
+Questi limiti risultano tuttavia coerenti con l'obiettivo didattico dell'attivita' e con la finestra temporale di sviluppo prevista.
 
-- interfaccia web per utenti non tecnici;
-- supporto OCR per scansioni;
-- gestione dei permessi per reparto, ufficio o proprietario del documento;
-- versioning del documento;
-- query expansion AI;
-- riassunto on demand in consultazione;
-- dashboard amministrativa per i log e gli indicatori di utilizzo.
+## 10. Evoluzioni future
+
+Le principali linee di estensione del sistema possono essere identificate nelle seguenti direttrici:
+
+- integrazione di OCR per documenti scansionati;
+- introduzione di permessi granulari per reparto o livello organizzativo;
+- sviluppo di una interfaccia web dedicata per utenti non tecnici;
+- introduzione della query expansion AI nella fase di ricerca;
+- generazione on demand di riassunti contestuali;
+- dashboard amministrativa per audit e monitoraggio d'uso;
+- gestione del versioning documentale.
 
 ## 11. Conclusioni
 
-La soluzione proposta risponde al problema aziendale con un'architettura semplice ma credibile, costruita con componenti coerenti con il dominio del document management. L'uso combinato di MongoDB e Solr separa in modo pulito persistenza e ricerca, mentre l'introduzione di una funzionalita' AI concreta migliora la qualita' dei metadati senza complicare eccessivamente il progetto. Per un'esercitazione di 8 ore, questa impostazione massimizza il rapporto tra completezza, robustezza e realizzabilita'.
+L'analisi e l'implementazione sviluppate dimostrano la fattibilita' di un sistema documentale aziendale costruito con una architettura modulare e tecnologie coerenti con il dominio applicativo. L'uso combinato di MongoDB e Solr consente di separare efficacemente persistenza e ricerca, mentre l'introduzione di una funzionalita' AI concreta amplia il valore del sistema senza comprometterne la controllabilita'.
+
+Dal punto di vista accademico e progettuale, la soluzione risulta adeguata agli obiettivi dell'esercitazione poiche' traduce un caso d'uso realistico in un backend strutturato, documentato e verificabile, con una chiara relazione tra requisiti, architettura, dati e comportamento applicativo.
