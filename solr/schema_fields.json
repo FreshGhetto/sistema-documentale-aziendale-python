@@ -1,0 +1,13 @@
+{
+  "add-field": [
+    { "name": "id", "type": "string", "stored": true, "indexed": true, "required": true },
+    { "name": "title_txt_it", "type": "text_it", "stored": true, "indexed": true },
+    { "name": "document_type_s", "type": "string", "stored": true, "indexed": true },
+    { "name": "author_s", "type": "string", "stored": true, "indexed": true },
+    { "name": "tags_ss", "type": "strings", "stored": true, "indexed": true, "multiValued": true },
+    { "name": "uploaded_at_dt", "type": "pdate", "stored": true, "indexed": true },
+    { "name": "content_txt_it", "type": "text_it", "stored": true, "indexed": true },
+    { "name": "ai_category_s", "type": "string", "stored": true, "indexed": true },
+    { "name": "ai_summary_txt_it", "type": "text_it", "stored": true, "indexed": true }
+  ]
+}

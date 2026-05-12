@@ -1,0 +1,3 @@
+Curriculum di Luca Bianchi.
+Esperienze principali in help desk, gestione ticket e supporto infrastrutturale.
+Competenze: reti, Windows Server, Active Directory, scripting PowerShell.

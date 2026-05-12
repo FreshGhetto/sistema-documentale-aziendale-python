@@ -1,0 +1,15 @@
+{
+  "add-field-type": {
+    "name": "text_it",
+    "class": "solr.TextField",
+    "positionIncrementGap": "100",
+    "analyzer": {
+      "tokenizer": { "class": "solr.StandardTokenizerFactory" },
+      "filters": [
+        { "class": "solr.LowerCaseFilterFactory" },
+        { "class": "solr.StopFilterFactory", "ignoreCase": true, "words": "lang/stopwords_it.txt" },
+        { "class": "solr.ItalianLightStemFilterFactory" }
+      ]
+    }
+  }
+}
