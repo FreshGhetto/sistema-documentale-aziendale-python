@@ -1,6 +1,8 @@
 from contextlib import suppress
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from pymongo.errors import PyMongoError
 
 from app.config import get_settings
 from app.database import mongo_manager
@@ -46,6 +48,16 @@ def create_app() -> FastAPI:
         except Exception:
             solr_status = "error"
         return {"app": "ok", "mongo": mongo_status, "solr": solr_status}
+
+    @app.exception_handler(PyMongoError)
+    async def handle_mongo_error(_: Request, exc: PyMongoError) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "detail": "MongoDB non raggiungibile o operazione fallita.",
+                "error": str(exc),
+            },
+        )
 
     app.include_router(auth.router)
     app.include_router(documents.router)

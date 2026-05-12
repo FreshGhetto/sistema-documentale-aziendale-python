@@ -93,7 +93,14 @@ def create_document_record(
     }
     result = mongo_manager.documents.insert_one(record)
     record["_id"] = result.inserted_id
-    solr_service.index_document(record)
+    try:
+        solr_service.index_document(record)
+    except Exception as exc:
+        mongo_manager.documents.delete_one({"_id": result.inserted_id})
+        raise HTTPException(
+            status_code=503,
+            detail="Documento salvato ma non indicizzato su Solr. Operazione annullata.",
+        ) from exc
     return record
 
 

@@ -48,6 +48,12 @@ pip install -r requirements.txt
 4. Avviare MongoDB.
 5. Configurare Apache Solr seguendo [solr/setup_solr.md](solr/setup_solr.md).
 
+Se si usa MongoDB Atlas o DigitalOcean Managed MongoDB, verificare anche:
+
+- allowlist o trusted sources del proprio IP pubblico;
+- raggiungibilita' outbound sulla porta `27017`;
+- stringa `MONGO_URI` completa di `authSource` e `tls=true` se richiesta dal provider.
+
 ## Avvio
 
 ```bash
