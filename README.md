@@ -1,12 +1,20 @@
 # Sistema Documentale Aziendale in Python
 
-Backend FastAPI per un sistema documentale interno con:
+Backend FastAPI per un sistema documentale interno, progettato per una media impresa e sviluppato come esercitazione ITS. Il sistema permette di caricare documenti aziendali, estrarne il testo, salvarli in MongoDB, indicizzarli in Apache Solr ed eseguire ricerche full-text con filtri strutturati.
 
-- persistenza dei metadati e del testo estratto su MongoDB;
-- indicizzazione e ricerca full-text su Apache Solr;
-- autenticazione base con login utente/password;
-- audit log delle operazioni;
-- classificazione AI del documento con fallback locale.
+Il progetto include anche una funzionalita' AI di classificazione automatica del documento, con fallback locale per garantire continuita' operativa in caso di errore del servizio LLM.
+
+## Caratteristiche principali
+
+- upload di documenti `PDF`, `DOCX` e `TXT`, anche multipli;
+- estrazione automatica del testo;
+- persistenza di metadati e contenuto su MongoDB;
+- salvataggio del file originale su filesystem;
+- indicizzazione su Solr con campi dedicati e analyzer italiano;
+- ricerca full-text con paginazione e filtri;
+- autenticazione base con token Bearer;
+- audit log delle operazioni principali;
+- classificazione AI con sintesi breve e fallback robusto.
 
 ## Requisiti coperti
 
@@ -33,6 +41,7 @@ solr/
 scripts/
 main.py
 requirements.txt
+tests/
 ```
 
 ## Installazione
@@ -62,6 +71,15 @@ uvicorn app.main:app --reload
 
 L'applicazione sarà disponibile su `http://127.0.0.1:8000`.
 
+## Architettura logica
+
+- `app/routers/`: endpoint HTTP
+- `app/services/`: logica applicativa
+- `app/database.py`: accesso MongoDB
+- `solr/`: configurazione del core e dello schema Solr
+- `dataset/`: documenti fittizi per la demo
+- `tests/`: test unitari e test di integrazione configurabili
+
 ## Credenziali iniziali
 
 Alla prima partenza, se MongoDB è raggiungibile, viene creato l'utente admin definito nel file `.env`:
@@ -80,6 +98,37 @@ Alla prima partenza, se MongoDB è raggiungibile, viene creato l'utente admin de
 - `GET /health`
 
 La documentazione Swagger è disponibile su `http://127.0.0.1:8000/docs`.
+
+## Testing
+
+### Test unitari
+
+```bash
+py -m pytest
+```
+
+### Test di integrazione live con pytest
+
+```bash
+set RUN_INTEGRATION_TESTS=1
+set TEST_BASE_URL=http://127.0.0.1:8002
+set TEST_USERNAME=admin
+set TEST_PASSWORD=Admin123!
+py -m pytest -m integration
+```
+
+### Smoke test end-to-end
+
+```bash
+set TEST_BASE_URL=http://127.0.0.1:8002
+set TEST_USERNAME=admin
+set TEST_PASSWORD=Admin123!
+python scripts/run_smoke_tests.py
+```
+
+Documentazione di dettaglio:
+
+- [docs/test_plan.md](docs/test_plan.md)
 
 ## Esempi di utilizzo
 
@@ -131,8 +180,32 @@ Il deliverable richiesto è presente in:
 - [docs/documento_analisi.md](docs/documento_analisi.md)
 - [docs/documento_analisi.docx](docs/documento_analisi.docx)
 
+## Materiale per demo e presentazione
+
+- [docs/presentazione_demo.md](docs/presentazione_demo.md)
+- [docs/presentazione_demo.docx](docs/presentazione_demo.docx)
+- [docs/checklist_consegna.md](docs/checklist_consegna.md)
+
 ## Limiti noti
 
 - non è presente OCR per PDF scansionati;
 - l'autenticazione è volutamente semplice, adatta a un laboratorio;
 - la UI non è inclusa: la demo può essere eseguita via Swagger UI o client HTTP.
+
+## Troubleshooting
+
+### MongoDB remoto non raggiungibile
+
+Se `/health` restituisce `mongo: error`, verificare:
+
+- allowlist IP del provider cloud MongoDB;
+- porta `27017` raggiungibile dalla macchina di sviluppo;
+- stringa `MONGO_URI` coerente con il cluster.
+
+### Solr non raggiungibile
+
+Se `/health` restituisce `solr: error`, controllare:
+
+- servizio Solr avviato sulla porta `8983`;
+- core `documents` creato;
+- schema aggiornato con i file presenti nella cartella `solr/`.
