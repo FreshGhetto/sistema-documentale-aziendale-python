@@ -98,39 +98,57 @@ I campi testuali usano un analyzer italiano dedicato.
 
 ## 7. Proposte AI
 
+La traccia richiede di individuare tre modi diversi di utilizzare l'AI nel sistema documentale. Questa sezione e' quindi centrale nel documento: per ogni proposta vengono indicati il punto del flusso operativo, il problema risolto, l'input e l'output del modello, il modo in cui il risultato viene mostrato o salvato e il comportamento previsto in caso di errore.
+
 ### Proposta 1 - Classificazione automatica del documento
 
 Stato: implementata.
 
-Punto del flusso: upload o classificazione successiva.
+Punto del flusso operativo: la funzione viene usata durante l'upload del documento oppure successivamente tramite endpoint dedicato su un documento gia' salvato.
 
-Input: testo estratto.
+Problema risolto: la classificazione manuale puo' produrre errori, categorie incoerenti o metadati mancanti. L'AI aiuta l'utente proponendo una tipologia coerente con il contenuto del documento e una breve sintesi utile nella consultazione.
 
-Output: categoria tra `contratto`, `ordine`, `fattura`, `cv`, `comunicazione`, `altro`, piu' sintesi breve.
+Input del modello: testo estratto dal documento, limitato a una porzione significativa per contenere costi e tempi di risposta.
 
-Persistenza: campi `ai_category` e `ai_summary` in MongoDB, indicizzati anche in Solr.
+Output del modello: categoria tra `contratto`, `ordine`, `fattura`, `cv`, `comunicazione`, `altro`, piu' sintesi breve.
 
-Fallback: se la chiave API manca o il provider non risponde, viene usato un classificatore locale basato su parole chiave e punteggio.
+Salvataggio e visualizzazione: il risultato viene salvato nei campi `ai_category` e `ai_summary` della collection MongoDB `documents`, viene indicizzato anche in Solr e viene restituito nelle risposte degli endpoint di upload e dettaglio documento.
+
+Gestione errori e fallback: se la chiave API manca, il provider non risponde o la risposta non e' valida, il sistema usa un classificatore locale basato su parole chiave e punteggio. In questo modo l'upload non viene bloccato e l'utente riceve comunque un risultato utilizzabile.
 
 ### Proposta 2 - Espansione semantica della query
 
 Stato: progettuale.
 
-Punto del flusso: ricerca.
+Punto del flusso operativo: la funzione si collocherebbe nella fase di ricerca, prima dell'interrogazione a Solr.
 
-Obiettivo: migliorare query brevi o ambigue generando sinonimi o riformulazioni.
+Problema risolto: gli utenti spesso cercano con parole diverse da quelle presenti nei documenti. Ad esempio, potrebbero cercare "computer ufficio" mentre nei documenti compare "materiale informatico" o "fornitura hardware". L'espansione semantica aiuterebbe a recuperare risultati pertinenti anche quando il lessico dell'utente non coincide con quello del documento.
 
-Fallback: ricerca originale invariata.
+Input del modello: query originale dell'utente, eventuali filtri selezionati e, in futuro, un piccolo dizionario di categorie aziendali.
+
+Output del modello: query riscritta o arricchita con sinonimi e termini correlati, adatta a essere passata a Solr.
+
+Salvataggio e visualizzazione: la query espansa potrebbe essere mostrata all'utente come suggerimento oppure salvata nell'audit log insieme alla query originale, per analizzare nel tempo come gli utenti cercano i documenti.
+
+Gestione errori e fallback: se il modello AI non risponde o produce una riformulazione non valida, il sistema esegue la ricerca originale senza modifiche. Questo evita che un errore AI impedisca la ricerca standard.
 
 ### Proposta 3 - Riassunto contestuale
 
 Stato: progettuale.
 
-Punto del flusso: consultazione del dettaglio documento.
+Punto del flusso operativo: la funzione si collocherebbe nella consultazione del dettaglio documento, quando l'utente ha gia' aperto un documento e vuole capirne rapidamente il contenuto.
 
-Obiettivo: aiutare l'utente a capire rapidamente contenuti lunghi.
+Problema risolto: alcuni documenti aziendali, soprattutto contratti, comunicazioni lunghe o documenti amministrativi, richiedono tempo per essere letti. Un riassunto AI aiuterebbe l'utente a capire subito se il documento e' rilevante.
 
-Fallback: visualizzazione del testo estratto originale.
+Input del modello: testo completo del documento o una porzione selezionata, eventualmente insieme alla tipologia documentale e ai metadati principali.
+
+Output del modello: sintesi in linguaggio naturale con i punti principali del documento, eventuali scadenze, soggetti coinvolti o informazioni operative rilevanti.
+
+Salvataggio e visualizzazione: il riassunto potrebbe essere mostrato nella vista dettaglio documento. In una versione successiva potrebbe essere salvato in cache in MongoDB per evitare chiamate ripetute al modello sullo stesso documento.
+
+Gestione errori e fallback: se il servizio AI fallisce, il sistema continua a mostrare il testo estratto originale. L'errore potrebbe essere registrato nell'audit log senza interrompere la consultazione.
+
+Scelta implementativa: tra le tre proposte e' stata implementata la classificazione automatica perche' e' la piu' coerente con il flusso di upload, produce metadati immediatamente utili alla ricerca e rimane realizzabile nel tempo previsto dall'esercitazione. Le altre due proposte sono documentate come sviluppi progettuali, come consentito dalla traccia.
 
 ## 8. Copertura requisiti funzionali
 

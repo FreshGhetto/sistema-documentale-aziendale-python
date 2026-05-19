@@ -212,6 +212,8 @@ Didascalia consigliata:
 
 La traccia richiede l'individuazione di tre possibili modalita' di impiego dell'AI all'interno del sistema documentale. Nel presente progetto sono state elaborate tre proposte, di cui una effettivamente implementata e due mantenute a livello progettuale.
 
+Questa e' una delle parti centrali dell'analisi, perche' non si limita a dichiarare genericamente l'uso di un modello linguistico, ma descrive tre applicazioni concrete nel flusso operativo del sistema: una sul caricamento, una sulla ricerca e una sulla consultazione.
+
 ### 6.1 Proposta 1 - Classificazione automatica del documento (implementata)
 
 #### Punto del flusso operativo
