@@ -147,9 +147,9 @@ Fallback: visualizzazione del testo estratto originale.
 
 ## 9. Ambiente di esecuzione
 
-Per l'ambiente locale e' stato aggiunto `docker-compose.yml`.
+Per l'ambiente locale e' stato aggiunto `docker-compose.yml`. Per la verifica con MongoDB online non serve modificare il codice: occorre configurare `MONGO_URI` e `MONGO_DB_NAME` nel file `.env`.
 
-Avvio servizi:
+Avvio servizi locali:
 
 ```bash
 docker compose up -d
@@ -161,6 +161,15 @@ Avvio backend:
 py -m uvicorn app.main:app --reload
 ```
 
+Esempio configurazione MongoDB online:
+
+```env
+MONGO_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER_HOST/DATABASE_NAME?retryWrites=true&w=majority
+MONGO_DB_NAME=document_management
+```
+
+Prima della verifica online occorre controllare la allowlist IP del provider MongoDB e la correttezza di utente, password, database e opzioni TLS/authSource richieste dal servizio.
+
 Swagger UI:
 
 ```text
@@ -169,7 +178,7 @@ http://127.0.0.1:8000/docs
 
 ## 10. Collaudo finale
 
-Il sistema e' stato collaudato con MongoDB e Solr in Docker.
+Il sistema e' stato collaudato con MongoDB e Solr in Docker locale. La configurazione e' compatibile anche con MongoDB online tramite variabili d'ambiente.
 
 Risultato health:
 

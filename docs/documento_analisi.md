@@ -338,13 +338,17 @@ In sede di collaudo, il sistema ha mostrato i seguenti comportamenti:
 - indicizzazione e ricerca Solr correttamente funzionanti;
 - classificazione AI con fallback funzionante.
 
-Il collaudo finale e' stato eseguito con MongoDB e Apache Solr avviati tramite Docker locale. L'ambiente verificato utilizza:
+Il collaudo finale locale e' stato eseguito con MongoDB e Apache Solr avviati tramite Docker. La stessa applicazione puo' pero' usare anche un MongoDB online, modificando solo le variabili `MONGO_URI` e `MONGO_DB_NAME` nel file `.env`.
+
+L'ambiente locale verificato utilizza:
 
 - MongoDB su `localhost:27017`;
 - Apache Solr su `localhost:8983`;
 - core Solr dedicato `documents`;
 - backend FastAPI su `http://127.0.0.1:8000`;
 - credenziali demo `admin` / `Admin123!`.
+
+Per la verifica su MongoDB online, il backend non richiede modifiche al codice. E' sufficiente configurare una stringa di connessione remota, ad esempio verso MongoDB Atlas o DigitalOcean Managed MongoDB, e assicurarsi che l'IP della macchina di test sia autorizzato nella allowlist del provider. Alla prima partenza, se il database remoto e' raggiungibile, l'applicazione crea automaticamente l'utente admin predefinito.
 
 La risposta dell'endpoint `/health` ha confermato il corretto collegamento ai servizi:
 
@@ -373,7 +377,7 @@ Pur soddisfacendo il perimetro dell'esercitazione, il progetto presenta alcuni l
 - assenza di OCR per documenti scansionati privi di testo nativo;
 - autenticazione semplificata, priva di ruoli gerarchici articolati;
 - assenza di una interfaccia frontend dedicata;
-- necessita' di configurare correttamente i servizi esterni MongoDB e Solr prima della demo;
+- necessita' di configurare correttamente i servizi esterni MongoDB e Solr prima della demo, in particolare allowlist e credenziali nel caso di MongoDB online;
 - classificazione AI limitata a un insieme chiuso di categorie documentali.
 
 Questi limiti risultano tuttavia coerenti con l'obiettivo didattico dell'attivita' e con la finestra temporale di sviluppo prevista.

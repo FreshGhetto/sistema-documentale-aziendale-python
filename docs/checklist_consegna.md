@@ -22,4 +22,5 @@
 - [x] aprire Swagger su `/docs`
 - [x] tenere pronta la cartella `dataset/`
 - [x] aprire il documento Word per il deliverable finale
+- [ ] se la verifica usa MongoDB online, impostare `MONGO_URI` reale e allowlist IP del provider
 - [ ] inserire le immagini seguendo `docs/guida_immagini.md`

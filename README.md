@@ -54,7 +54,9 @@ pip install -r requirements.txt
 ```
 
 3. Copiare `.env.example` in `.env` e aggiornare le variabili.
-4. Avviare MongoDB e Solr, ad esempio con Docker:
+4. Avviare MongoDB e Solr.
+
+Per sviluppo locale si puo' usare Docker:
 
 ```bash
 docker compose up -d
@@ -68,11 +70,23 @@ Con Docker locale, le impostazioni predefinite di `.env.example` sono gia' coere
 - Solr su `localhost:8983`;
 - core Solr `documents`.
 
+Per una verifica con MongoDB online, lasciare Solr in locale o su server dedicato e impostare nel file `.env` la stringa reale del database remoto:
+
+```env
+MONGO_URI=mongodb+srv://USERNAME:PASSWORD@CLUSTER_HOST/DATABASE_NAME?retryWrites=true&w=majority
+MONGO_DB_NAME=document_management
+```
+
+Il file `.env.online.example` contiene un template senza credenziali reali.
+
 Se si usa MongoDB Atlas o DigitalOcean Managed MongoDB, verificare anche:
 
 - allowlist o trusted sources del proprio IP pubblico;
 - raggiungibilita' outbound sulla porta `27017`;
 - stringa `MONGO_URI` completa di `authSource` e `tls=true` se richiesta dal provider.
+- database indicato da `MONGO_DB_NAME`, per esempio `document_management`.
+
+Alla prima partenza il backend crea automaticamente l'utente admin se il database remoto e' raggiungibile.
 
 ## Avvio
 
@@ -214,6 +228,7 @@ Se `/health` restituisce `mongo: error`, verificare:
 - allowlist IP del provider cloud MongoDB;
 - porta `27017` raggiungibile dalla macchina di sviluppo;
 - stringa `MONGO_URI` coerente con il cluster.
+- eventuali variabili d'ambiente di sistema, che hanno priorita' rispetto a `.env`.
 
 ### Solr non raggiungibile
 

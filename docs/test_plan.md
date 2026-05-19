@@ -83,3 +83,17 @@ Data test: 19 maggio 2026
 - Swagger UI: `http://127.0.0.1:8000/docs`
 
 Nota: eventuali variabili d'ambiente di sistema `MONGO_URI` e `MONGO_DB_NAME` possono sovrascrivere `.env`. Per usare Docker locale, devono puntare rispettivamente a `mongodb://localhost:27017` e `document_management`.
+
+## Verifica con MongoDB online
+
+Per eseguire la stessa verifica usando MongoDB online:
+
+1. configurare `.env` con la stringa remota `MONGO_URI`;
+2. impostare `MONGO_DB_NAME` sul database scelto;
+3. aggiungere l'IP della macchina di test nella allowlist del provider;
+4. avviare Solr e applicare lo schema;
+5. avviare FastAPI;
+6. controllare `/health`, che deve restituire `mongo: ok` e `solr: ok`;
+7. eseguire `py scripts/run_smoke_tests.py`.
+
+Il codice non distingue tra MongoDB locale e online: la scelta dipende solo dalla configurazione.
