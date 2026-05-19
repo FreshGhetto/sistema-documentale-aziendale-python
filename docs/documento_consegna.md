@@ -205,12 +205,35 @@ Lo smoke test ha verificato login, upload di un documento del dataset, classific
 
 ## 12. Sviluppi futuri
 
-- OCR per scansioni.
-- Permessi granulari per reparto o ruolo.
-- Interfaccia web frontend.
-- Espansione semantica della ricerca.
-- Riassunto AI on demand.
-- Dashboard amministrativa per audit e statistiche.
+Gli sviluppi futuri non sono necessari per soddisfare la consegna dell'esercitazione, ma indicano come il prototipo potrebbe evolvere in un sistema aziendale piu' completo.
+
+### OCR per documenti scansionati
+
+Il sistema attuale estrae testo da PDF nativi, DOCX e TXT. In futuro potrebbe integrare un motore OCR per gestire documenti scansionati o immagini, rendendo ricercabili anche archivi storici e file firmati digitalizzati. L'OCR verrebbe attivato quando l'estrazione standard produce testo vuoto o insufficiente.
+
+### Permessi granulari per reparto o ruolo
+
+L'autenticazione attuale e' di base. Una versione aziendale dovrebbe prevedere ruoli come admin, amministrazione, acquisti, risorse umane e lettore. I documenti potrebbero avere campi come `department` o `allowed_roles`, usati per filtrare ricerca, dettaglio e download in base ai permessi dell'utente.
+
+### Interfaccia web frontend
+
+Swagger e' sufficiente per demo e test tecnico, ma un utente non tecnico avrebbe bisogno di un'interfaccia dedicata. Un frontend potrebbe offrire login, upload guidato, ricerca con filtri, vista dettaglio e download. Il frontend consumerebbe gli endpoint FastAPI gia' presenti.
+
+### Espansione semantica della ricerca
+
+Questa e' una delle proposte AI progettuali. Il sistema potrebbe usare un modello AI per trasformare query brevi o ambigue in ricerche piu' efficaci. Ad esempio, "computer ufficio" potrebbe essere arricchito con termini come "materiale informatico", "hardware" o "postazioni di lavoro". Se l'AI non risponde, il sistema userebbe la query originale.
+
+### Riassunto AI on demand
+
+Oltre alla sintesi breve generata in classificazione, si potrebbe aggiungere un riassunto dettagliato richiesto dall'utente nella vista documento. Sarebbe utile per contratti lunghi o comunicazioni articolate. Il risultato potrebbe essere mostrato a video e salvato in cache per ridurre chiamate ripetute al modello.
+
+### Dashboard amministrativa per audit e statistiche
+
+Poiche' il sistema registra gia' le operazioni in `audit_log`, una dashboard potrebbe mostrare documenti caricati, ricerche effettuate, categorie piu' frequenti, utenti attivi ed errori. Questo aiuterebbe l'amministratore a monitorare l'utilizzo e a migliorare la qualita' dei dati.
+
+### Versioning documentale
+
+In futuro si potrebbe gestire la storia delle versioni di uno stesso documento. Un contratto aggiornato, ad esempio, potrebbe mantenere collegamento con la versione precedente tramite un `document_group_id`, un numero di versione e uno stato come `attivo` o `archiviato`.
 
 ## 13. Conclusione
 

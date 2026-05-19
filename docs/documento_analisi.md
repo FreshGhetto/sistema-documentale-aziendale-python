@@ -373,22 +373,56 @@ Pur soddisfacendo il perimetro dell'esercitazione, il progetto presenta alcuni l
 - assenza di OCR per documenti scansionati privi di testo nativo;
 - autenticazione semplificata, priva di ruoli gerarchici articolati;
 - assenza di una interfaccia frontend dedicata;
-- dipendenza da un'infrastruttura MongoDB esterna per i test completi end-to-end;
+- necessita' di configurare correttamente i servizi esterni MongoDB e Solr prima della demo;
 - classificazione AI limitata a un insieme chiuso di categorie documentali.
 
 Questi limiti risultano tuttavia coerenti con l'obiettivo didattico dell'attivita' e con la finestra temporale di sviluppo prevista.
 
 ## 10. Evoluzioni future
 
-Le principali linee di estensione del sistema possono essere identificate nelle seguenti direttrici:
+Le principali linee di estensione del sistema possono essere organizzate per priorita' funzionale. Le proposte seguenti non sono necessarie per soddisfare il perimetro dell'esercitazione, ma rappresentano sviluppi realistici per trasformare il prototipo in un sistema documentale aziendale piu' completo.
 
-- integrazione di OCR per documenti scansionati;
-- introduzione di permessi granulari per reparto o livello organizzativo;
-- sviluppo di una interfaccia web dedicata per utenti non tecnici;
-- introduzione della query expansion AI nella fase di ricerca;
-- generazione on demand di riassunti contestuali;
-- dashboard amministrativa per audit e monitoraggio d'uso;
-- gestione del versioning documentale.
+### 10.1 OCR per documenti scansionati
+
+L'attuale sistema estrae testo da PDF nativi, DOCX e TXT, ma non esegue OCR su immagini o scansioni. In un contesto aziendale reale molti documenti storici possono essere scansioni prive di testo selezionabile. L'integrazione di un motore OCR, ad esempio Tesseract o un servizio cloud dedicato, permetterebbe di acquisire anche questi documenti e renderli ricercabili in Solr.
+
+Il flusso potrebbe essere esteso in questo modo: se l'estrazione standard da PDF produce poco testo o testo vuoto, il backend attiva una fase OCR sulle pagine del documento, salva il testo ottenuto in MongoDB e lo indicizza normalmente in Solr. Il beneficio principale sarebbe l'aumento della copertura documentale, soprattutto per archivi storici, contratti firmati e documenti ricevuti via scansione.
+
+### 10.2 Permessi granulari e ruoli organizzativi
+
+L'autenticazione attuale e' volutamente semplice: l'utente autenticato puo' usare gli endpoint principali. In una versione aziendale sarebbe opportuno introdurre ruoli e permessi piu' dettagliati, ad esempio admin, ufficio acquisti, amministrazione, risorse umane e utente in sola lettura.
+
+Questa evoluzione richiederebbe nuovi campi sui documenti, come `department`, `visibility` o `allowed_roles`, e controlli autorizzativi negli endpoint di ricerca, dettaglio e download. In questo modo un CV potrebbe essere visibile solo alle risorse umane, mentre fatture e ordini potrebbero essere accessibili all'amministrazione e agli acquisti. Il vantaggio sarebbe un controllo degli accessi piu' coerente con la riservatezza dei documenti aziendali.
+
+### 10.3 Interfaccia web frontend
+
+Il progetto espone gia' una Swagger UI sufficiente per test e demo tecnica, ma un utente aziendale non tecnico avrebbe bisogno di una interfaccia dedicata. Un frontend web potrebbe includere una pagina di login, una schermata di upload con selezione guidata dei metadati, una pagina di ricerca con filtri laterali e una vista dettaglio documento.
+
+La realizzazione potrebbe avvenire con React, Vue o template server-side. Il backend FastAPI rimarrebbe invariato e il frontend consumerebbe gli endpoint gia' disponibili. Il beneficio principale sarebbe rendere il sistema utilizzabile da utenti operativi senza conoscenze tecniche o strumenti come curl e Swagger.
+
+### 10.4 Espansione semantica della ricerca con AI
+
+La query expansion e' una delle proposte AI progettuali gia' descritte. In una futura implementazione, quando l'utente cerca una parola generica o incompleta, il sistema potrebbe usare un modello AI per generare sinonimi, termini correlati o una formulazione piu' adatta a Solr.
+
+Ad esempio, una ricerca come "computer ufficio" potrebbe essere espansa in "materiale informatico", "fornitura hardware", "postazioni di lavoro" e "stampanti". Il backend dovrebbe comunque mantenere un fallback: se il modello non risponde, viene usata la query originale. Questa funzionalita' migliorerebbe la qualita' dei risultati quando il lessico usato dall'utente non coincide con quello presente nei documenti.
+
+### 10.5 Riassunto AI on demand
+
+Il sistema salva gia' una sintesi breve prodotta durante la classificazione AI. Una possibile evoluzione consiste nel generare riassunti piu' dettagliati su richiesta, direttamente dalla pagina di dettaglio del documento.
+
+Il riassunto on demand potrebbe essere utile per contratti lunghi, comunicazioni articolate o documentazione amministrativa. L'utente potrebbe richiedere una sintesi dei punti principali, delle scadenze, delle parti coinvolte o degli importi. Il risultato potrebbe essere mostrato a video e, se utile, salvato in cache per evitare chiamate ripetute al modello. In caso di errore dell'AI, il sistema continuerebbe a mostrare il testo estratto originale.
+
+### 10.6 Dashboard amministrativa e monitoraggio
+
+La collection `audit_log` registra gia' le operazioni principali. Una futura dashboard amministrativa potrebbe trasformare questi dati in indicatori utili: numero di documenti caricati, ricerche piu' frequenti, utenti piu' attivi, errori di indicizzazione, categorie documentali piu' presenti.
+
+Questa evoluzione aiuterebbe l'amministratore a monitorare l'uso del sistema e a individuare problemi operativi. Ad esempio, molte ricerche senza risultati potrebbero indicare la necessita' di migliorare i metadati, aggiungere sinonimi o potenziare la ricerca semantica.
+
+### 10.7 Versioning documentale
+
+Nel sistema attuale ogni upload crea un nuovo documento. In un contesto reale puo' essere necessario gestire versioni successive dello stesso file, ad esempio un contratto aggiornato o una procedura interna revisionata.
+
+Il versioning potrebbe essere implementato aggiungendo un campo `document_group_id`, un numero di versione e uno stato del documento, come `bozza`, `attivo` o `archiviato`. In questo modo sarebbe possibile mantenere lo storico delle modifiche, distinguere la versione corrente da quelle precedenti e ricostruire l'evoluzione del documento nel tempo.
 
 ## 11. Conclusioni
 

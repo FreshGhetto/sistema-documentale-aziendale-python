@@ -142,11 +142,12 @@ Immagine da inserire:
 
 ## Slide 10 - Conclusioni e sviluppi futuri
 
-- OCR per scansioni
-- permessi granulari per reparto
-- UI frontend
-- espansione AI sulla ricerca
-- riassunto contestuale in consultazione
+- OCR per scansioni: permette di indicizzare PDF scansionati e archivi storici non testuali
+- permessi granulari per reparto: limita l'accesso a CV, fatture o contratti in base al ruolo
+- UI frontend: rende il sistema usabile da utenti non tecnici senza Swagger
+- espansione AI sulla ricerca: migliora query brevi o ambigue con sinonimi e termini correlati
+- riassunto contestuale in consultazione: aiuta a leggere rapidamente documenti lunghi
+- dashboard audit: mostra caricamenti, ricerche, errori e utilizzo del sistema
 
 Immagine da inserire:
 
