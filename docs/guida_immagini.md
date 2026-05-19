@@ -69,7 +69,8 @@ Posizione:
 Contenuto:
 
 - screenshot Swagger o terminale con risposta `/health`
-- oppure risposta `503` MongoDB non raggiungibile
+- la risposta deve mostrare `mongo: ok` e `solr: ok`
+- in alternativa, screenshot dello smoke test end-to-end superato
 
 Formato consigliato:
 
@@ -145,12 +146,12 @@ Obiettivo:
 
 Immagine da inserire:
 
-- screenshot `/health`
-- eventualmente test di rete fallito verso MongoDB
+- screenshot `/health` con `mongo: ok` e `solr: ok`
+- screenshot dello smoke test con login, upload, ricerca e dettaglio completati
 
 Obiettivo:
 
-- spiegare che il blocco finale e' infrastrutturale, non di codice
+- dimostrare che il sistema e' stato verificato end-to-end con MongoDB e Solr in Docker
 
 ## Come produrre velocemente le immagini
 

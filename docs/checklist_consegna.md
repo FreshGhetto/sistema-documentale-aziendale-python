@@ -12,13 +12,14 @@
 - [x] traccia professionale per la demo finale
 - [x] piano di test
 - [x] guida su dove inserire le immagini
+- [x] documento unico di consegna
 
 ## Prima della demo
 
-- [ ] verificare allowlist del cluster MongoDB
-- [ ] controllare login admin
-- [ ] eseguire `python scripts/run_smoke_tests.py`
-- [ ] aprire Swagger su `/docs`
-- [ ] tenere pronta la cartella `dataset/`
-- [ ] aprire il documento Word per il deliverable finale
+- [x] avviare MongoDB e Solr con Docker
+- [x] controllare login admin
+- [x] eseguire `py scripts/run_smoke_tests.py`
+- [x] aprire Swagger su `/docs`
+- [x] tenere pronta la cartella `dataset/`
+- [x] aprire il documento Word per il deliverable finale
 - [ ] inserire le immagini seguendo `docs/guida_immagini.md`

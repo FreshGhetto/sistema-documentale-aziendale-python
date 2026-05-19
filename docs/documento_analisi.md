@@ -331,19 +331,40 @@ In sede di collaudo, il sistema ha mostrato i seguenti comportamenti:
 
 - compilazione Python corretta;
 - test unitari superati;
+- test di integrazione live superati;
+- login amministratore funzionante;
+- upload e download documento funzionanti;
+- persistenza MongoDB funzionante;
 - indicizzazione e ricerca Solr correttamente funzionanti;
-- classificazione AI con fallback funzionante;
-- impossibilita' di completare il flusso di login/upload contro il cluster MongoDB remoto, a causa di un problema di raggiungibilita' infrastrutturale sulla porta `27017`.
+- classificazione AI con fallback funzionante.
 
-Tale ultimo elemento non evidenzia una contraddizione del codice applicativo, ma una dipendenza dall'ambiente di rete e dalla configurazione del provider del database gestito.
+Il collaudo finale e' stato eseguito con MongoDB e Apache Solr avviati tramite Docker locale. L'ambiente verificato utilizza:
+
+- MongoDB su `localhost:27017`;
+- Apache Solr su `localhost:8983`;
+- core Solr dedicato `documents`;
+- backend FastAPI su `http://127.0.0.1:8000`;
+- credenziali demo `admin` / `Admin123!`.
+
+La risposta dell'endpoint `/health` ha confermato il corretto collegamento ai servizi:
+
+```json
+{"app":"ok","mongo":"ok","solr":"ok"}
+```
+
+Sono stati inoltre eseguiti:
+
+- test unitari e di servizio con esito `11 passed`;
+- test di integrazione live con esito `3 passed`;
+- smoke test end-to-end con login, upload, classificazione AI, ricerca e dettaglio documento completati correttamente.
 
 ### 8.1 Immagine da inserire nel documento
 
-Inserire in questa sezione uno screenshot della risposta di `/health` oppure di una risposta `503` gestita dal backend, per documentare il comportamento controllato in condizioni di errore.
+Inserire in questa sezione uno screenshot della risposta di `/health` con MongoDB e Solr in stato `ok`, oppure uno screenshot dello smoke test end-to-end completato correttamente.
 
 Didascalia consigliata:
 
-`Figura 4 - Esempio di gestione controllata degli errori applicativi`
+`Figura 4 - Collaudo finale con MongoDB e Solr in Docker`
 
 ## 9. Limiti della soluzione
 

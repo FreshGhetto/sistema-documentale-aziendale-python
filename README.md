@@ -54,8 +54,19 @@ pip install -r requirements.txt
 ```
 
 3. Copiare `.env.example` in `.env` e aggiornare le variabili.
-4. Avviare MongoDB.
+4. Avviare MongoDB e Solr, ad esempio con Docker:
+
+```bash
+docker compose up -d
+```
+
 5. Configurare Apache Solr seguendo [solr/setup_solr.md](solr/setup_solr.md).
+
+Con Docker locale, le impostazioni predefinite di `.env.example` sono gia' coerenti con:
+
+- MongoDB su `localhost:27017`;
+- Solr su `localhost:8983`;
+- core Solr `documents`.
 
 Se si usa MongoDB Atlas o DigitalOcean Managed MongoDB, verificare anche:
 
@@ -111,7 +122,7 @@ py -m pytest
 
 ```bash
 set RUN_INTEGRATION_TESTS=1
-set TEST_BASE_URL=http://127.0.0.1:8002
+set TEST_BASE_URL=http://127.0.0.1:8000
 set TEST_USERNAME=admin
 set TEST_PASSWORD=Admin123!
 py -m pytest -m integration
@@ -120,7 +131,7 @@ py -m pytest -m integration
 ### Smoke test end-to-end
 
 ```bash
-set TEST_BASE_URL=http://127.0.0.1:8002
+set TEST_BASE_URL=http://127.0.0.1:8000
 set TEST_USERNAME=admin
 set TEST_PASSWORD=Admin123!
 python scripts/run_smoke_tests.py
@@ -179,6 +190,8 @@ Il deliverable richiesto è presente in:
 
 - [docs/documento_analisi.md](docs/documento_analisi.md)
 - [docs/documento_analisi.docx](docs/documento_analisi.docx)
+- [docs/documento_consegna.md](docs/documento_consegna.md)
+- [docs/documento_consegna.docx](docs/documento_consegna.docx)
 
 ## Materiale per demo e presentazione
 

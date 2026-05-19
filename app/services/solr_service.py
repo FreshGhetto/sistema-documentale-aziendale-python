@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pysolr
 from fastapi import HTTPException
@@ -14,6 +14,16 @@ class SolrService:
     def ping(self) -> None:
         self.client.ping()
 
+    @staticmethod
+    def _to_solr_date(value: datetime) -> str:
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=UTC)
+        return value.astimezone(UTC).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+    @staticmethod
+    def _escape_filter_value(value: str) -> str:
+        return value.replace("\\", "\\\\").replace('"', '\\"')
+
     def index_document(self, record: dict) -> None:
         doc = {
             "id": str(record["_id"]),
@@ -21,7 +31,7 @@ class SolrService:
             "document_type_s": record["document_type"],
             "author_s": record["author"],
             "tags_ss": record.get("tags", []),
-            "uploaded_at_dt": record["uploaded_at"].isoformat(),
+            "uploaded_at_dt": self._to_solr_date(record["uploaded_at"]),
             "content_txt_it": record["extracted_text"],
             "ai_category_s": record.get("ai_category"),
             "ai_summary_txt_it": record.get("ai_summary"),
@@ -41,12 +51,12 @@ class SolrService:
     ) -> dict:
         filters: list[str] = []
         if document_type:
-            filters.append(f'document_type_s:"{document_type}"')
+            filters.append(f'document_type_s:"{self._escape_filter_value(document_type)}"')
         if author:
-            filters.append(f'author_s:"{author}"')
+            filters.append(f'author_s:"{self._escape_filter_value(author)}"')
         if date_from or date_to:
-            start = date_from.isoformat() if date_from else "*"
-            end = date_to.isoformat() if date_to else "*"
+            start = self._to_solr_date(date_from) if date_from else "*"
+            end = self._to_solr_date(date_to) if date_to else "*"
             filters.append(f"uploaded_at_dt:[{start} TO {end}]")
 
         try:
@@ -58,6 +68,7 @@ class SolrService:
                 **{
                     "defType": "edismax",
                     "qf": "title_txt_it^3 content_txt_it ai_summary_txt_it^2",
+                    "fl": "*,score",
                     "hl": "true",
                     "hl.fl": "content_txt_it",
                     "hl.simple.pre": "<mark>",
@@ -78,7 +89,9 @@ class SolrService:
                     "document_type": doc.get("document_type_s", ""),
                     "author": doc.get("author_s", ""),
                     "tags": doc.get("tags_ss", []),
-                    "uploaded_at": datetime.fromisoformat(doc["uploaded_at_dt"]) if doc.get("uploaded_at_dt") else None,
+                    "uploaded_at": datetime.fromisoformat(doc["uploaded_at_dt"].replace("Z", "+00:00"))
+                    if doc.get("uploaded_at_dt")
+                    else None,
                     "score": doc.get("score"),
                     "snippet": " ... ".join(snippet_parts) if snippet_parts else None,
                 }

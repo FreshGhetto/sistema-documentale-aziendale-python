@@ -1,6 +1,5 @@
 {
   "add-field": [
-    { "name": "id", "type": "string", "stored": true, "indexed": true, "required": true },
     { "name": "title_txt_it", "type": "text_it", "stored": true, "indexed": true },
     { "name": "document_type_s", "type": "string", "stored": true, "indexed": true },
     { "name": "author_s", "type": "string", "stored": true, "indexed": true },

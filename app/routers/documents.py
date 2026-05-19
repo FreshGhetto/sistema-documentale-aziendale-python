@@ -7,13 +7,14 @@ from app.config import get_settings
 from app.dependencies import get_current_user
 from app.schemas import AIClassificationResponse, DocumentResponse, UploadResult
 from app.services import audit_service
-from app.services.ai_service import classify_document
 from app.services.document_service import (
     create_document_record,
     get_document_by_id,
+    normalize_tags,
     parse_metadata_list,
     serialize_document,
     store_file,
+    update_document_ai_classification,
 )
 
 
@@ -31,7 +32,7 @@ def upload_documents(
     current_user: dict = Depends(get_current_user),
 ) -> UploadResult:
     metadata_list = parse_metadata_list(metadata_json)
-    shared_tags = [item.strip() for item in tags.split(",")] if tags else []
+    shared_tags = normalize_tags(tags)
 
     uploaded = []
     for index, file in enumerate(files):
@@ -39,7 +40,7 @@ def upload_documents(
         title = file_metadata.get("title") or Path(file.filename or "").stem
         item_document_type = file_metadata.get("document_type") or document_type
         item_author = file_metadata.get("author") or author or current_user["username"]
-        item_tags = file_metadata.get("tags") or shared_tags
+        item_tags = normalize_tags(file_metadata.get("tags")) or shared_tags
         if not item_document_type:
             raise HTTPException(status_code=400, detail="Il campo document_type e' obbligatorio.")
 
@@ -85,13 +86,15 @@ def download_document(document_id: str, current_user: dict = Depends(get_current
     )
     settings = get_settings()
     file_path = settings.storage_path / record["stored_filename"]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File originale non trovato su filesystem.")
     return FileResponse(path=file_path, filename=record["filename"])
 
 
 @router.post("/{document_id}/classify", response_model=AIClassificationResponse)
 def classify_existing_document(document_id: str, current_user: dict = Depends(get_current_user)) -> AIClassificationResponse:
     record = get_document_by_id(document_id)
-    result = classify_document(record["extracted_text"])
+    result = update_document_ai_classification(record)
     audit_service.log_action(
         current_user["username"],
         "classify_document",

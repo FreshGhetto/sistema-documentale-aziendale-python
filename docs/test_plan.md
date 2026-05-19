@@ -13,20 +13,22 @@ Verificare in modo ripetibile il comportamento del sistema documentale su tre li
 Comando:
 
 ```bash
-pytest
+py -m pytest
 ```
 
 Copertura prevista:
 
 - classificazione AI con fallback;
-- validazione del parsing di `metadata_json`.
+- validazione del parsing di `metadata_json`;
+- normalizzazione tag;
+- persistenza e reindicizzazione della classificazione AI.
 
 ## Livello 2 - Smoke test live
 
 Comando:
 
 ```bash
-python scripts/run_smoke_tests.py
+py scripts/run_smoke_tests.py
 ```
 
 Variabili configurabili:
@@ -46,6 +48,7 @@ Flusso verificato:
 3. `POST /documents/upload`
 4. `GET /search`
 5. `GET /documents/{id}`
+6. verifica contenuto restituito
 
 ## Livello 3 - Test di integrazione via pytest
 
@@ -53,35 +56,30 @@ Comando:
 
 ```bash
 set RUN_INTEGRATION_TESTS=1
-pytest -m integration
+set TEST_BASE_URL=http://127.0.0.1:8000
+py -m pytest -m integration
 ```
 
 I test live sono disattivati di default per evitare falsi negativi quando i servizi esterni non sono disponibili.
 
 ## Esito del collaudo corrente
 
-Data test: 12 maggio 2026
+Data test: 19 maggio 2026
 
 - compilazione Python: superata
-- test unitari: superati
-- Solr: raggiungibile e funzionante
+- test unitari: `11 passed, 3 skipped`
+- test di integrazione live: `3 passed`
+- smoke test end-to-end: superato
+- MongoDB Docker locale: raggiungibile e funzionante
+- Solr Docker locale: raggiungibile e funzionante
 - AI fallback: funzionante
-- MongoDB DigitalOcean: non raggiungibile dalla macchina di sviluppo sulla porta `27017`
+- login, upload, ricerca, dettaglio e download: funzionanti
 
-## Diagnosi sul cluster MongoDB
+## Ambiente usato nel collaudo
 
-La stringa di connessione e' stata provata direttamente via `pymongo`, ma il nodo:
+- MongoDB: `localhost:27017`
+- Solr: `localhost:8983`
+- API FastAPI: `http://127.0.0.1:8000`
+- Swagger UI: `http://127.0.0.1:8000/docs`
 
-`db-mongodb-fra1-08385-33daff81.mongo.ondigitalocean.com:27017`
-
-non risponde dal client corrente.
-
-IP pubblico rilevato durante il test:
-
-`81.114.244.148`
-
-Verifica da fare sul provider:
-
-- aggiungere l'IP alla allowlist / trusted sources;
-- verificare regole firewall e reachability TCP verso `27017`;
-- confermare che il cluster sia attivo e accetti connessioni esterne.
+Nota: eventuali variabili d'ambiente di sistema `MONGO_URI` e `MONGO_DB_NAME` possono sovrascrivere `.env`. Per usare Docker locale, devono puntare rispettivamente a `mongodb://localhost:27017` e `document_management`.

@@ -27,7 +27,26 @@ def parse_metadata_list(metadata_json: str | None) -> list[dict]:
         raise HTTPException(status_code=400, detail="Il campo metadata_json non contiene JSON valido.") from exc
     if not isinstance(parsed, list):
         raise HTTPException(status_code=400, detail="metadata_json deve essere una lista di oggetti.")
+    if not all(isinstance(item, dict) for item in parsed):
+        raise HTTPException(status_code=400, detail="metadata_json deve contenere solo oggetti.")
     return parsed
+
+
+def normalize_tags(value: object) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    if isinstance(value, list):
+        tags = []
+        for item in value:
+            if not isinstance(item, str):
+                raise HTTPException(status_code=400, detail="I tag devono essere stringhe.")
+            cleaned = item.strip()
+            if cleaned:
+                tags.append(cleaned)
+        return tags
+    raise HTTPException(status_code=400, detail="Il campo tags deve essere una stringa o una lista di stringhe.")
 
 
 def extract_text(file_path: Path) -> str:
@@ -70,9 +89,13 @@ def create_document_record(
     uploaded_by: str,
     use_ai: bool,
 ) -> dict:
-    extracted_text = extract_text(file_path)
-    if not extracted_text.strip():
-        raise HTTPException(status_code=400, detail=f"Il file {filename} non contiene testo estraibile.")
+    try:
+        extracted_text = extract_text(file_path)
+        if not extracted_text.strip():
+            raise HTTPException(status_code=400, detail=f"Il file {filename} non contiene testo estraibile.")
+    except Exception:
+        file_path.unlink(missing_ok=True)
+        raise
 
     ai_data = {"category": None, "summary": None}
     if use_ai:
@@ -97,11 +120,33 @@ def create_document_record(
         solr_service.index_document(record)
     except Exception as exc:
         mongo_manager.documents.delete_one({"_id": result.inserted_id})
+        file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=503,
             detail="Documento salvato ma non indicizzato su Solr. Operazione annullata.",
         ) from exc
     return record
+
+
+def update_document_ai_classification(record: dict) -> dict:
+    ai_data = classify_document(record["extracted_text"])
+    previous = {
+        "ai_category": record.get("ai_category"),
+        "ai_summary": record.get("ai_summary"),
+    }
+    update = {
+        "ai_category": ai_data.get("category"),
+        "ai_summary": ai_data.get("summary"),
+    }
+    mongo_manager.documents.update_one({"_id": record["_id"]}, {"$set": update})
+    record.update(update)
+    try:
+        solr_service.index_document(record)
+    except Exception as exc:
+        mongo_manager.documents.update_one({"_id": record["_id"]}, {"$set": previous})
+        record.update(previous)
+        raise HTTPException(status_code=503, detail="Classificazione non applicata: reindicizzazione Solr fallita.") from exc
+    return ai_data
 
 
 def serialize_document(record: dict) -> dict:

@@ -113,7 +113,9 @@ Immagini da inserire:
 - validazione input lato API
 - gestione errori MongoDB e Solr
 - rollback se indicizzazione fallisce
-- suite di test unitaria e smoke test configurabile
+- suite di test unitaria
+- test di integrazione live
+- smoke test end-to-end
 
 Immagine da inserire:
 
@@ -121,18 +123,22 @@ Immagine da inserire:
 
 ## Slide 9 - Stato del collaudo
 
-- applicazione avviabile
-- Solr testato
-- AI fallback testata
-- MongoDB remoto bloccato da allowlist/firewall del provider
+- ambiente Docker locale verificato
+- `/health`: `mongo: ok`, `solr: ok`
+- login admin funzionante
+- upload documento funzionante
+- ricerca full-text con snippet e score funzionante
+- dettaglio e download documento funzionanti
+- AI fallback testata e funzionante
 
 Messaggio da dire:
 
-"Il codice e' pronto anche per il cluster remoto, ma l'ultimo vincolo emerso e' infrastrutturale, non applicativo."
+"Il sistema e' stato collaudato end-to-end con MongoDB e Solr in Docker. La demo mostra il flusso completo richiesto dalla traccia."
 
 Immagine da inserire:
 
-- screenshot `/health` con `mongo:error` e `solr:ok`
+- screenshot `/health` con `mongo:ok` e `solr:ok`
+- screenshot smoke test riuscito
 
 ## Slide 10 - Conclusioni e sviluppi futuri
 

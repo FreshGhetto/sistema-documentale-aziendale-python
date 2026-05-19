@@ -5,7 +5,7 @@ from pathlib import Path
 import requests
 
 
-BASE_URL = os.getenv("TEST_BASE_URL", "http://127.0.0.1:8002")
+BASE_URL = os.getenv("TEST_BASE_URL", "http://127.0.0.1:8000")
 USERNAME = os.getenv("TEST_USERNAME", "admin")
 PASSWORD = os.getenv("TEST_PASSWORD", "Admin123!")
 DATASET_FILE = Path(os.getenv("TEST_DATASET_FILE", "dataset/01_contratto_fornitura.txt"))
